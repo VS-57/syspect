@@ -18,9 +18,9 @@
 
 #define SS_VERSION_MAJOR 0
 #define SS_VERSION_MINOR 2
-#define SS_VERSION_PATCH 0
+#define SS_VERSION_PATCH 1
 
-#define SS_VERSION_STRING "0.2.0"
+#define SS_VERSION_STRING "0.2.1"
 
 // GitHub Releases etiketi bu bicimde olmali: v0.2.0
 #define SS_VERSION_TAG "v" SS_VERSION_STRING

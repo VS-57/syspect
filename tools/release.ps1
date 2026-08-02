@@ -13,16 +13,21 @@
 #  bozuyor ve hata mesaji sebebi hic gostermiyor. ss_cli.cpp ayni kurali
 #  izliyor.
 #
+#  Surum notu metni bu dosyada DEGIL: tools\release-notes.template.md (UTF-8)
+#  ve degisiklik listesi CHANGELOG.md. Ikisi de asagida, 5. adimda okunuyor.
+#
 #  Kullanim:
-#      tools\release.ps1              paketle
-#      tools\release.ps1 -Tag         paketle + git etiketi olustur
-#      tools\release.ps1 -SkipBuild   derlemeyi atla (hizli deneme)
+#      tools\release.ps1                     paketle (not TASLAK isaretlenir)
+#      tools\release.ps1 -VirusTotal <url>   tarama linkiyle, yayima hazir not
+#      tools\release.ps1 -Tag                paketle + git etiketi olustur
+#      tools\release.ps1 -SkipBuild          derlemeyi atla (hizli deneme)
 #
 #  Etiket BILEREK varsayilan degil: paket dogrulanmadan etiket atilmamali.
 # ============================================================================
 param(
     [switch]$Tag,
-    [switch]$SkipBuild
+    [switch]$SkipBuild,
+    [string]$VirusTotal
 )
 
 $ErrorActionPreference = "Stop"
@@ -116,37 +121,84 @@ foreach ($n in @("ss_ui.exe", "ss_cli.exe")) {
 }
 
 # ---- 5) Surum notu ---------------------------------------------------------
+#  Metin BU DOSYADA DEGIL, tools/release-notes.template.md icinde. Sebebi
+#  dosyanin basindaki ASCII kurali: notu burada kursaydik not da ASCII
+#  kalirdi ("Dosya ozetleri", "Dogrulamak icin") ve kullanicinin gordugu ilk
+#  sayfa bozuk Turkce olurdu. Sablon ayri bir UTF-8 dosyada; betik yalnizca
+#  yer tutuculari degistiriyor.
+#
+#  Degisiklik listesi CHANGELOG.md'den geliyor. Elle yazilan bir liste er ya
+#  da gec unutulur; surumun ne getirdigini soylemeyen bir not, kullanicinin
+#  neyi indirdigini bilmeden guncellemesi demek.
+$changelogPath = Join-Path $root "CHANGELOG.md"
+if (-not (Test-Path $changelogPath)) { throw "CHANGELOG.md bulunamadi." }
+$utf8 = New-Object System.Text.UTF8Encoding $false
+$clog = [System.IO.File]::ReadAllText($changelogPath, $utf8)
+
+# "## [0.2.1]" basligindan bir sonraki "## [" basligina (ya da dosya sonuna)
+# kadar olan blok.
+$secPattern = '(?ms)^##\s*\[' + [regex]::Escape($version) + '\][^\r\n]*\r?\n(.*?)(?=^##\s*\[|\z)'
+$secMatch = [regex]::Match($clog, $secPattern)
+if (-not $secMatch.Success) {
+    throw "CHANGELOG.md icinde [$version] bolumu yok. Once degisiklikleri yazin; paket uretilmedi."
+}
+$changes = $secMatch.Groups[1].Value.Trim()
+if (-not $changes) {
+    throw "CHANGELOG.md icindeki [$version] bolumu bos. Paket uretilmedi."
+}
+
+$tplPath = Join-Path $PSScriptRoot "release-notes.template.md"
+if (-not (Test-Path $tplPath)) { throw "Sablon bulunamadi: $tplPath" }
+$tpl = [System.IO.File]::ReadAllText($tplPath, $utf8)
+# Sablonun basindaki aciklama bloguna cikti icinde yer yok: gercek not, SATIR
+# BASINDA "## " ile baslayan ilk satir. Duz IndexOf("## ") yetmiyor -- aciklama
+# blogunun icinde de "## " gecebiliyor ve kesme oraya dusuyor.
+$tplStart = [regex]::Match($tpl, '(?m)^##\s')
+if (-not $tplStart.Success) { throw "Sablonda satir basinda '## ' yok." }
+$tpl = $tpl.Substring($tplStart.Index)
+
+# Kosullu bolumler: <!--AD--> ... <!--/AD-->. Tutulacaksa isaretciler silinip
+# icerik birakilir, tutulmayacaksa blogun tamami gider. Metin sablonda kaldigi
+# icin bu dosya ASCII kalabiliyor.
+function Select-NoteBlock {
+    param([string]$Text, [string]$Name, [bool]$Keep)
+    $pattern = '(?s)[ \t]*<!--' + [regex]::Escape($Name) + '-->\r?\n(.*?)<!--/' +
+               [regex]::Escape($Name) + '-->[ \t]*\r?\n'
+    if ($Keep) {
+        return [regex]::Replace($Text, $pattern, { param($m) $m.Groups[1].Value })
+    }
+    return [regex]::Replace($Text, $pattern, "")
+}
+
+# VirusTotal linki verilmediyse not TASLAK sayilir. Eski surum bunu HTML
+# yorumuyla isaretliyordu; yorum yayimlanan notta GORUNMUYOR, yani unutuldugu
+# an kimse fark etmiyordu -- v0.2.0 tam olarak boyle cikti. Artik uyari
+# okunabilir bir alinti satiri.
+$hasVt = [bool]$VirusTotal
+if ($hasVt -and $VirusTotal -notmatch '^https://(www\.)?virustotal\.com/') {
+    throw "VirusTotal linki virustotal.com adresinde olmali: $VirusTotal"
+}
+if (-not $hasVt) {
+    Write-Host "UYARI: VirusTotal linki verilmedi, not TASLAK olarak isaretlendi." -ForegroundColor Yellow
+}
+
+$tpl = Select-NoteBlock -Text $tpl -Name "TASLAK" -Keep (-not $hasVt)
+$tpl = Select-NoteBlock -Text $tpl -Name "VT_VAR" -Keep $hasVt
+$tpl = Select-NoteBlock -Text $tpl -Name "VT_YOK" -Keep (-not $hasVt)
+
+$hashBlock = (($hashes.Keys | ForEach-Object { "$($hashes[$_])  $_" }) -join "`r`n")
+
+$body = $tpl.Replace("{{VERSION}}", $version).
+             Replace("{{CHANGES}}", $changes).
+             Replace("{{HASHES}}",  $hashBlock).
+             Replace("{{VT_URL}}",  "<$VirusTotal>")
+$body = $body -replace "`r?`n", "`r`n"
+
 # Iki ad altinda yaziliyor: "0.2.0" (insan icin) ve "v0.2.0" (release is
 # akisi ref_name ile ariyor). Tek ada baglamak, ikisinden birinin sessizce
 # bulunamamasi demekti.
 $notes  = Join-Path $out "release-notes-$version.md"
 $notesV = Join-Path $out "release-notes-$tagName.md"
-$lines = New-Object System.Collections.Generic.List[string]
-$lines.Add("## Syspect $version")
-$lines.Add("")
-$lines.Add("### Dosya ozetleri (SHA-256)")
-$lines.Add("")
-$lines.Add('```')
-foreach ($k in $hashes.Keys) { $lines.Add("$($hashes[$k])  $k") }
-$lines.Add('```')
-$lines.Add("")
-$lines.Add("Dogrulamak icin PowerShell'de:")
-$lines.Add("")
-$lines.Add('```powershell')
-$lines.Add("Get-FileHash syspect-$version.zip -Algorithm SHA256")
-$lines.Add('```')
-$lines.Add("")
-$lines.Add("### Windows uyarisi")
-$lines.Add("")
-$lines.Add("Program imzasiz dagitiliyor; Windows mavi bir uyari gosterecek.")
-$lines.Add("**Daha fazla bilgi** > **Yine de calistir** ile gecebilirsiniz.")
-$lines.Add("Kaynak kod acik; dilerseniz kendiniz derleyin.")
-$lines.Add("")
-$lines.Add("### VirusTotal")
-$lines.Add("")
-$lines.Add("<!-- Paketi virustotal.com'a yukleyip tarama linkini BURAYA yapistirin. -->")
-$lines.Add("<!-- Bu adim atlanirsa surum YAYINLANMAMALI. -->")
-$body = $lines -join "`r`n"
 # BOM'suz UTF-8: Out-File -Encoding utf8 PowerShell 5.1'de BOM yaziyor ve
 # GitHub surum notunun ilk satirinda gorunmez bir karakter birakiyor.
 $noBom = New-Object System.Text.UTF8Encoding $false
@@ -173,6 +225,8 @@ if ($Tag) {
 Write-Host ""
 Write-Host "SIRADAKI ADIMLAR:" -ForegroundColor Cyan
 Write-Host "  1. $zip dosyasini virustotal.com'a yukleyin"
-Write-Host "  2. Tarama linkini surum notuna yapistirin"
+Write-Host "  2. Notu tarama linkiyle yeniden uretin:"
+Write-Host "       tools\release.ps1 -SkipBuild -VirusTotal <link>"
+Write-Host "     (ya da taslaktaki notu GitHub'da duzenleyip TASLAK satirini silin)"
 Write-Host "  3. GitHub Releases'e $tagName olarak yukleyin"
 Write-Host "  4. EnUcuzSistem sayfasindaki ozetleri guncelleyin"

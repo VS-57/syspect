@@ -922,7 +922,7 @@ void drawResultsPage(Graphics& g2, const RectF& area) {
          RectF(area.X + S(2.0f), y, area.Width, S(14.0f)), kFaint);
 
     if (fits < g.findings.size()) {
-        text(g2, L"tekerlekle kaydırın   ·   " +
+        text(g2, L"Tekerlekle kaydırın   ·   " +
                  num(static_cast<double>(g.findingScroll + 1), 0) + L"–" +
                  num(static_cast<double>(g.findingScroll + fits), 0) + L" / " +
                  num(static_cast<double>(g.findings.size()), 0),
@@ -1230,29 +1230,24 @@ void drawSettingsPage(Graphics& g2, const RectF& area) {
         ly += S(34.0f);
     }
 
-    // --- Sablon disa aktarma ---
-    RectF c2(area.X, c1.GetBottom() + gap, colW, S(112.0f));
-    card(g2, c2, kCard, kBorder);
-
-    text(g2, L"Çeviri şablonu", F.h2.get(),
-         RectF(c2.X + pad, c2.Y + S(14.0f), c2.Width - pad * 2, S(22.0f)), kText);
-    text(g2, L"Yeni dil eklemek için: şablonu kaydedin, çevirin, "
-             L"lang klasörüne koyun.", F.sm.get(),
-         RectF(c2.X + pad, c2.Y + S(38.0f), c2.Width - pad * 2, S(32.0f)),
-         kMuted, StringAlignmentNear, StringAlignmentNear, true);
-
-    RectF bTpl(c2.X + pad, c2.GetBottom() - S(42.0f), S(196.0f), S(30.0f));
-    card(g2, bTpl, g.hover == HS_LANGTPL ? kCardHi : kBg, kBorder, 7.0f);
-    text(g2, L"Şablonu Kaydet", F.sm.get(), bTpl,
-         g.hover == HS_LANGTPL ? kText : kMuted,
-         StringAlignmentCenter, StringAlignmentCenter);
-    addHotspot(bTpl, HS_LANGTPL);
-
-    text(g2, num(static_cast<double>(ss18::collectedCount()), 0) + L" metin",
-         F.sm.get(),
-         RectF(bTpl.GetRight() + S(12.0f), bTpl.Y,
-               c2.Width - bTpl.Width - pad * 2 - S(12.0f), S(30.0f)),
-         kFaint, StringAlignmentNear, StringAlignmentCenter);
+    // ÇEVİRİ ŞABLONU DÜĞMESİ KALDIRILDI.
+    //
+    //  Amaci "yeni dil ekleyecek kisi hangi metinlerin cevrilecegini gorsun"
+    //  idi. Iki sebeple kaldirildi:
+    //
+    //  1) Cikti kullanilamiyordu. Toplayici EKRANA CIKAN her metni
+    //     kaydediyor, oysa metinlerin cogu calisma aninda kuruluyor:
+    //     islemci adi, olcum sonuclari, saat, sayac. Gercek bir kayitta 328
+    //     satirin 141'i sayacin kendi etiketiydi ("12 metin", "13 metin"...)
+    //     — sayaci yazmak sayaci artiriyor, her cizimde yeni bir satir
+    //     doguyordu.
+    //
+    //  2) Son kullanicinin isi degil. Ayarlar sayfasi zaten kalabalikti ve
+    //     bu dugme ceviri yapmayan herkes icin gurultuydu.
+    //
+    //  Dil eklemek hala mumkun ve kod degisikligi gerektirmiyor: lang/
+    //  klasorune bir .lang dosyasi birakmak yeterli. Cevrilecek metin listesi
+    //  kaynaktan uretiliyor (lang/en.lang buyuk olcude tam bir ornektir).
 
     // ------------------------------------------------------------------
     //  Surum ve guncelleme
@@ -1412,7 +1407,7 @@ void drawSystemPage(Graphics& g2, const RectF& area) {
         {L"İşlemci",      toWide(readCpuName())},
         {L"Ekran kartı",  toWide(readGpuName())},
         {L"Bellek",       ram ? num(static_cast<double>(ram) / 1024.0, 0) + L" GB"
-                              : L"bilinmiyor"},
+                              : L"Bilinmiyor"},
         {L"Güç planı",    toWide(g.power.friendlyName) +
                           (g.power.onBattery ? L"  ·  PİLDEN çalışıyor" : L"")},
         {L"Yetki",        ss::isElevated() ? L"Yönetici" : L"Standart kullanıcı"},
@@ -1430,7 +1425,7 @@ void drawSystemPage(Graphics& g2, const RectF& area) {
             {toWide(g.memory.profileLabel) + L" profili",
              g.memory.profile == ssprobe::MemorySpec::Profile::On  ? L"AÇIK"
            : g.memory.profile == ssprobe::MemorySpec::Profile::Off ? L"KAPALI"
-                                                                   : L"belirlenemedi"});
+                                                                   : L"Belirlenemedi"});
         std::wstring mods;
         for (const auto& m : g.memory.modules) {
             if (!mods.empty()) mods += L"  ·  ";
@@ -1450,7 +1445,7 @@ void drawSystemPage(Graphics& g2, const RectF& area) {
         rows.push_back({L"Resizable BAR",
             g.gpuStatic.resizableBar == sstelem::GpuStatic::Tri::Yes ? L"AÇIK"
           : g.gpuStatic.resizableBar == sstelem::GpuStatic::Tri::No  ? L"KAPALI"
-                                                                     : L"belirlenemedi"});
+                                                                     : L"Belirlenemedi"});
         if (g.gpuStatic.vramTotalMb)
             rows.push_back({L"VRAM / BAR1",
                 num(static_cast<double>(g.gpuStatic.vramTotalMb), 0) + L" MB / " +
@@ -1637,7 +1632,7 @@ void drawSidebar(Graphics& g2, const RECT& client) {
             RectF pb(r.X + S(14.0f), r.Y + S(50.0f), r.Width - S(28.0f), S(3.0f));
             bar(g2, pb, pct, c);
         } else {
-            text(g2, L"ölçülemiyor", F.sm.get(),
+            text(g2, L"Ölçülemiyor", F.sm.get(),
                  RectF(r.X + S(14.0f), r.Y + S(26.0f), r.Width - S(28.0f), S(20.0f)),
                  kFaint);
         }
@@ -1661,7 +1656,7 @@ void drawSidebar(Graphics& g2, const RECT& client) {
         text(g2, L"CPU SICAKLIK", F.tiny.get(),
              RectF(r.X + S(14.0f), r.Y + S(10.0f), r.Width - S(28.0f), S(14.0f)),
              kFaint);
-        text(g2, L"yakında", F.body.get(),
+        text(g2, L"Yakında", F.body.get(),
              RectF(r.X + S(14.0f), r.Y + S(26.0f), r.Width - S(28.0f), S(20.0f)),
              kFaint);
         y += S(70.0f);
@@ -1690,7 +1685,7 @@ void drawSidebar(Graphics& g2, const RECT& client) {
         text(g2, L"GÜÇ MODU", F.tiny.get(),
              RectF(pw.X + S(14.0f), pw.Y + S(10.0f), pw.Width - S(28.0f), S(14.0f)),
              kFaint);
-        text(g2, g.power.friendlyName.empty() ? L"bilinmiyor"
+        text(g2, g.power.friendlyName.empty() ? L"Bilinmiyor"
                                               : toWide(g.power.friendlyName),
              F.body.get(),
              RectF(pw.X + S(14.0f), pw.Y + S(26.0f), pw.Width - S(28.0f), S(22.0f)),

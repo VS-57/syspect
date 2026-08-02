@@ -18,6 +18,10 @@ CMakeFiles/
 
 # Dagitim ciktisi — ZIP ve stage klasoru, kaynak degil
 dist/
+# CI'dan indirilen paket. dist/ yazarken bu unutulmustu ve 0.2.0'in zip'i
+# depoya islendi: publish.ps1 `git ls-files` ile kopyaladigi icin build
+# ciktisi public surum anlik goruntusune de girecekti.
+dist-ci/
 
 # Public depo klonu (tools/publish.ps1). Ozel depoda islenmez; yalnizca
 # surum anlik goruntusunu public'e itmek icin kullanilan calisma alani.
