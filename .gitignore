@@ -1,0 +1,24 @@
+build/
+out/
+# WebView2 SDK — NuGet'ten cekilir, repoya binary koymuyoruz.
+# Kurulum komutu CLAUDE.md "Derleme ve test" bolumunde.
+third_party/
+cmake-build-*/
+*.exe
+*.pdb
+*.ilk
+*.obj
+*.o
+*.dmp
+*.etl
+.vs/
+.vscode/
+CMakeCache.txt
+CMakeFiles/
+
+# Dagitim ciktisi — ZIP ve stage klasoru, kaynak degil
+dist/
+
+# Public depo klonu (tools/publish.ps1). Ozel depoda islenmez; yalnizca
+# surum anlik goruntusunu public'e itmek icin kullanilan calisma alani.
+.publish/

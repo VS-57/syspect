@@ -1,0 +1,244 @@
+# Syspect dil dosyasi — English
+#
+# '~' satiri kaynak metindir (Turkce), DEGISTIRMEYIN.
+# '=' satirina cevirisini yazin. Bos birakilan satirlar cevrilmemis sayilir
+# ve uygulamada Turkce gorunur, yani dosyayi parca parca doldurabilirsiniz.
+#
+# {1} {2} gibi isaretler yer tutucudur; ceviride YERI degisebilir ama
+# kaybolmamalidir.
+#
+# Bu dosyayi uygulamanin yanindaki lang/ klasorune koyun.
+
+@name English
+@code en
+
+# ---------------------------------------------------------------------------
+#  Sekmeler ve ust serit
+# ---------------------------------------------------------------------------
+~ Ölçüm
+= Measure
+
+~ Sonuçlar
+= Results
+
+~ Grafik
+= Charts
+
+~ Mavi Ekran
+= Blue Screen
+
+~ Sistem
+= System
+
+~ Ayarlar
+= Settings
+
+~ Kaydı Başlat
+= Start Capture
+
+~ Durdur
+= Stop
+
+# ---------------------------------------------------------------------------
+#  Ölçüm sayfası
+# ---------------------------------------------------------------------------
+~ Ölçüm süresi
+= Capture duration
+
+~ Oyununuzu açık bırakın, takıldığını hissettiğiniz anları bu süre içinde tekrarlayın.
+= Leave your game running and reproduce the stutters you feel during this window.
+
+~ Hazır
+= Ready
+
+~ Sağ üstteki düğmeye basın. Ölçüm boyunca kare süreleri, sıcaklık,\nkullanım ve disk hareketi kaydedilir.
+= Press the button at the top right. Frame times, temperature, utilisation and disk activity are recorded throughout.
+
+~ GEÇEN SÜRE
+= ELAPSED
+
+~ KALAN SÜRE
+= REMAINING
+
+~ Ölçüm sürüyor — pencereyi kapatmayın.
+= Capture in progress. Don't close the window.
+
+~ Yeterli veri topladığınızda sağ üstten durdurun.
+= Stop from the top right once you have enough data.
+
+~ Son ölçüm tamamlandı
+= Last capture finished
+
+~ Sonuçlar sekmesinde ayrıntılar var.
+= Details are on the Results tab.
+
+~ Kayıt Aç (.syscap)
+= Open Capture (.syscap)
+
+~ Başkasının paylaştığı ölçümü açıp inceleyebilirsiniz. Dosyayı pencereye sürükleyip bırakmak da olur.
+= You can open and inspect a capture someone else shared. Dragging the file onto the window works too.
+
+# ---------------------------------------------------------------------------
+#  Sonuçlar sayfası — düğmeler
+# ---------------------------------------------------------------------------
+~ Kaydı Dışa Aktar
+= Export Capture
+
+~ Rapor Kaydet (.md)
+= Save Report (.md)
+
+~ Panoya Kopyala — forum / yapay zekâ
+= Copy to Clipboard (forum / AI)
+
+# ---------------------------------------------------------------------------
+#  Ayarlar sayfası
+# ---------------------------------------------------------------------------
+~ Dil
+= Language
+
+~ Yeni bir dil eklemek için aşağıdan şablon dosyasını kaydedin, çevirip programın yanındaki lang klasörüne koyun.
+= To add a language, save the template file below, translate it and drop it into the lang folder next to the program.
+
+~ Çeviri şablonu
+= Translation template
+
+~ Program açıldığından beri ekranda görünen metinler toplanıyor. Şablonu kaydetmeden önce bütün sayfaları bir kez gezin — gezilmemiş sayfaların metinleri şablona girmez.
+= Text shown on screen since the program started is being collected. Visit every page once before saving the template; text from pages you haven't opened won't be included.
+
+~ Şablonu Kaydet (.lang)
+= Save Template (.lang)
+
+~ Sürüm
+= Version
+
+~ Şimdi Denetle
+= Check Now
+
+~ İndirme sayfasını aç
+= Open download page
+
+~ Denetleniyor…
+= Checking…
+
+~ Henüz denetlenmedi.
+= Not checked yet.
+
+~ En güncel sürümü kullanıyorsunuz.
+= You're on the latest version.
+
+~ Açılışta denetle: AÇIK
+= Check on startup: ON
+
+~ Açılışta denetle: KAPALI
+= Check on startup: OFF
+
+~ Denetim tek bir istektir; hiçbir bilgi gönderilmez ve program kendini güncellemez.
+= The check is a single request. Nothing is sent, and the program never updates itself.
+
+# ---------------------------------------------------------------------------
+#  Bulgular — başlıklar
+# ---------------------------------------------------------------------------
+~ Bellek modülleri birbirinin aynısı değil
+= Memory modules are not identical
+
+~ Tek bellek modülü takılı (tek kanal)
+= A single memory module is installed (single channel)
+
+~ Windows dönen disk (HDD) üzerinde
+= Windows is on a spinning disk (HDD)
+
+~ Resizable BAR kapalı
+= Resizable BAR is off
+
+~ Resizable BAR açık
+= Resizable BAR is on
+
+~ Ekran kartı ısınma yüzünden hız düşürüyor
+= The graphics card is throttling due to heat
+
+~ Donanımsal frenleme (power brake) bildirildi
+= Hardware power brake reported
+
+~ Ekran kartı güç limitine takılıyor
+= The graphics card is hitting its power limit
+
+~ Ekran kartı yüklüyken bile gücünü kullanmıyor
+= The graphics card isn't using its power budget even under load
+
+~ İşlemci sıcaklığı okunamıyor
+= CPU temperature cannot be read
+
+~ Ekran kartı telemetrisi okunamıyor
+= Graphics card telemetry cannot be read
+
+~ Disk sağlık verisi okunamadı
+= Disk health data could not be read
+
+~ Sorun yok.
+= No problem found.
+
+~ Bakıldı, sorun bulunamadı.
+= Checked, nothing wrong.
+
+# ---------------------------------------------------------------------------
+#  Bulgular — açıklama ve aksiyon
+# ---------------------------------------------------------------------------
+~ Gerçek çekirdek sıcaklığı (Tctl/Tdie) için sistem sürücüsü gerekiyor; Windows bu değeri normal programlara vermiyor. Ölçülemeyen alan boş bırakılır.
+= Reading the real core temperature (Tctl/Tdie) needs a system driver; Windows doesn't expose it to ordinary programs. Anything that can't be measured is left empty.
+
+~ İkinci bir modül eklemek en ucuz iyileştirmedir.
+= Adding a second module is the cheapest improvement available.
+
+~ SMART kayıtlarını okumak için programın yönetici olarak çalışması gerekiyor. Disk modelleri ve tipleri okundu, sağlık durumu okunmadı.
+= Reading SMART records requires running the program as administrator. Drive models and types were read; health status was not.
+
+~ BIOS'ta \"Above 4G Decoding\" ve \"Re-Size BAR Support\" seçeneklerini açın.
+= Enable "Above 4G Decoding" and "Re-Size BAR Support" in BIOS.
+
+~ Kasa içi hava akışını ve tozu kontrol edin; dizüstüyse havalandırmayı kapatmayın.
+= Check case airflow and dust; on a laptop, don't block the vents.
+
+~ Başka bir güç kaynağıyla test edin, GPU kablolarını ayrı hatlardan çekin.
+= Test with a different power supply and run the GPU cables on separate rails.
+
+~ Verilerinizi hemen yedekleyin ve diski değiştirin.
+= Back up your data now and replace the drive.
+
+~ Oyunlarınızı SSD'ye taşıyın.
+= Move your games to an SSD.
+
+# ---------------------------------------------------------------------------
+#  Sebep etiketleri
+# ---------------------------------------------------------------------------
+~ Bellek / EXPO-XMP kararsızlığı
+= Memory / EXPO-XMP instability
+
+~ Ölçülmemiş diğer sebepler
+= Unmeasured other causes
+
+# ---------------------------------------------------------------------------
+#  Durum çubuğu
+# ---------------------------------------------------------------------------
+~ Ölçüm sürüyor
+= Capturing
+
+~ Ölçüm sürüyor — siz durdurana kadar
+= Capturing until you stop it
+
+~ Ölçüm tamamlanamadı
+= Capture could not be completed
+
+~ Rapor kaydedildi
+= Report saved
+
+~ Rapor yazılamadı
+= Report could not be written
+
+~ Rapor panoya kopyalandı — foruma veya yapay zekâya yapıştırabilirsiniz
+= Report copied to clipboard. Paste it into a forum or an AI chat.
+
+~ Kayıt dışa aktarıldı — bu dosyayı foruma bırakabilirsiniz
+= Capture exported. You can drop this file on a forum.
+
+~ Durduruluyor, son kareler işleniyor…
+= Stopping, processing the last frames…

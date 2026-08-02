@@ -1,0 +1,120 @@
+===============================================================================
+ StutterScope — Ucuncu Parti Bilesen Lisanslari
+ (Third-Party Component Licenses)
+===============================================================================
+
+Bu uygulama asagidaki acik kaynak bilesenleri kullanmaktadir. Her bilesenin
+lisans metni asagida aynen yer almaktadir.
+
+This application uses the following open source components. The license text
+of each component is reproduced verbatim below.
+
+
+-------------------------------------------------------------------------------
+ 1) PresentMon  —  Intel Corporation
+    https://github.com/GameTechDev/PresentMon
+    Lisans / License: MIT
+-------------------------------------------------------------------------------
+
+Copyright (C) 2017-2024 Intel Corporation
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"),
+to deal in the Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons to whom
+the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included
+in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES
+OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
+OR OTHER DEALINGS IN THE SOFTWARE.
+
+
+-------------------------------------------------------------------------------
+ 2) SQLite
+    https://www.sqlite.org/
+    Lisans / License: Public Domain (kamu mali)
+-------------------------------------------------------------------------------
+
+The author disclaims copyright to this source code. In place of a legal
+notice, here is a blessing:
+
+    May you do good and not evil.
+    May you find forgiveness for yourself and forgive others.
+    May you share freely, never taking more than you give.
+
+NOT: SQLite kamu malidir. Hicbir yukumluluk dogurmaz; bu bildirim yalnizca
+nezaket geregi eklenmistir.
+
+
+-------------------------------------------------------------------------------
+ 3) Microsoft Edge WebView2 Runtime
+    Lisans / License: Microsoft Software License Terms (dagitilabilir bilesen)
+-------------------------------------------------------------------------------
+
+WebView2 Runtime, Microsoft tarafindan dagitim izni verilen bir bilesendir.
+Uygulama bu bileseni yeniden dagitmaz; sistemde mevcut degilse Microsoft'un
+resmi kurulum araci (Evergreen Bootstrapper) calistirilir.
+
+Kullanim kosullari: https://developer.microsoft.com/microsoft-edge/webview2/
+
+
+-------------------------------------------------------------------------------
+ 4) NVIDIA Management Library (NVML)
+-------------------------------------------------------------------------------
+
+Uygulama nvml.dll dosyasini DAGITMAZ. Bu kutuphane kullanicinin sisteminde
+kurulu olan NVIDIA ekran karti surucusu ile birlikte gelir ve calisma
+zamaninda LoadLibrary ile yuklenir.
+
+
+-------------------------------------------------------------------------------
+ 5) AMD ADLX / Intel IGCL
+-------------------------------------------------------------------------------
+
+Uygulama bu kutuphaneleri DAGITMAZ. Kullanicinin sisteminde kurulu olan
+ekran karti surucusu ile birlikte gelirler ve calisma zamaninda yuklenirler.
+
+
+-------------------------------------------------------------------------------
+ 6) Inno Setup  —  Jordan Russell
+    https://jrsoftware.org/isinfo.php
+    Lisans / License: Inno Setup License (ticari kullanimda dahi ucretsiz)
+-------------------------------------------------------------------------------
+
+Inno Setup yalnizca kurulum paketini olusturmak icin kullanilmistir.
+Lisans metni: https://jrsoftware.org/files/is/license.txt
+
+
+===============================================================================
+ SORUMLULUK REDDI
+===============================================================================
+
+Bu yazilim, sistem kararliligi ile ilgili OLASILIK TEMELLI degerlendirmeler
+uretir. Uretilen sonuclar kesin teshis degildir; istatistiksel tahmindir.
+
+BIOS ayarlari (EXPO/XMP, Curve Optimizer, PBO, C-State), surucu kurulumu,
+donanim degisikligi ve benzeri islemler kullanicinin kendi sorumlulugundadir.
+Bu islemler sonucunda olusabilecek veri kaybi, donanim hasari veya garanti
+kaybindan yazilim gelistiricisi sorumlu tutulamaz.
+
+Yazilim "OLDUGU GIBI" saglanmaktadir; belirli bir amaca uygunluk dahil olmak
+uzere hicbir garanti verilmez.
+
+===============================================================================
+ GIZLILIK
+===============================================================================
+
+Bu yazilim topladigi tum verileri YALNIZCA yerel bilgisayarda saklar.
+Hicbir veri internet uzerinden gonderilmez. Kullanici raporu disari
+aktarmayi secerse, rapor icerigindeki makine adi, kullanici adi ve seri
+numaralari maskelenir.
+
+===============================================================================

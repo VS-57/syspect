@@ -1,0 +1,54 @@
+// ============================================================================
+//  Syspect — kaynak dosyasi
+//  ----------------------------------------------------------------------
+//  Simge burada baglaniyor. ID 1 secilmesinin sebebi: Windows Explorer ve
+//  gorev cubugu bir exe'nin simgesini sorarken EN KUCUK kaynak kimligini
+//  alir; 1 vermezsek baska bir simge one gecebilir.
+//
+//  syspect.ico dosyasi ss_makeicon tarafindan uretilir (logo.cpp'den).
+//  Depoya alinmasinin sebebi, derlemenin bu araca bagimli olmamasi.
+// ============================================================================
+#include "version.h"
+#include <winver.h>
+
+1 ICON "syspect.ico"
+
+// ----------------------------------------------------------------------------
+//  Surum bilgisi
+// ----------------------------------------------------------------------------
+//  Explorer > Ozellikler > Ayrintilar sekmesinde gorunur. Imzasiz dagitilan
+//  bir program icin bu alanlar guven acisindan onemli: bu alanlari bos birakan
+//  bir exe hem SmartScreen'e hem kullaniciya daha supheli gorunur.
+//
+//  VS_FF_PRERELEASE tasiniyor cunku surum 1.0'in altinda ve bu gizlenecek bir
+//  sey degil.
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION    SS_VERSION_MAJOR,SS_VERSION_MINOR,SS_VERSION_PATCH,0
+ PRODUCTVERSION SS_VERSION_MAJOR,SS_VERSION_MINOR,SS_VERSION_PATCH,0
+ FILEFLAGSMASK  VS_FFI_FILEFLAGSMASK
+ FILEFLAGS      VS_FF_PRERELEASE
+ FILEOS         VOS_NT_WINDOWS32
+ FILETYPE       VFT_APP
+ FILESUBTYPE    VFT2_UNKNOWN
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        // 040904E4 = Ingilizce (ABD) + kod sayfasi 1252. Ingilizce blok
+        // bilerek: Windows sistem diliyle eslesen blogu arar, bulamazsa
+        // ilkini kullanir — 0409 her makinede guvenle okunur.
+        BLOCK "040904E4"
+        BEGIN
+            VALUE "CompanyName",      SS_APP_NAME
+            VALUE "FileDescription",  "Oyun kararlilik tani araci"
+            VALUE "FileVersion",      SS_VERSION_STRING
+            VALUE "InternalName",     "ss_ui"
+            VALUE "OriginalFilename", "ss_ui.exe"
+            VALUE "ProductName",      SS_APP_NAME
+            VALUE "ProductVersion",   SS_VERSION_STRING
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1252
+    END
+END

@@ -1,0 +1,96 @@
+# ============================================================================
+#  Release — v* etiketinde derle, paketle, yayınla
+# ----------------------------------------------------------------------------
+#  NEDEN CI'DA DERLİYORUZ, geliştirme makinesinde değil:
+#
+#  Binary imzasız dağıtılıyor. Kullanıcının elindeki zip'in yayınlanan
+#  kaynaktan çıktığını doğrulamanın hiçbir yolu yoktu — "bana güven" demek
+#  zorundaydık. CI'da derlenirse şu söylenebiliyor:
+#
+#      Bu dosya, GitHub tarafından şu commit'ten derlendi.
+#      Kaynak açık, derleme günlüğü açık, SHA-256 ikisiyle de eşleşiyor.
+#
+#  İmzasız olmanın açığını kısmen kapatan tek şey bu. SignPath sertifikası
+#  gelene kadar en güçlü güven argümanı.
+#
+#  Bu aynı zamanda ayrı bir "release deposu" fikrini geçersiz kılıyor:
+#  iddia, binary ile kaynağın AYNI depoda olmasına dayanıyor.
+#
+#  Kullanım:
+#      git tag v0.2.1 && git push origin v0.2.1
+# ============================================================================
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Etiket (örn. v0.2.1)"
+        required: true
+
+permissions:
+  contents: write   # release oluşturmak için
+
+jobs:
+  release:
+    runs-on: windows-latest
+
+    # YALNIZCA PUBLIC DEPODA. Geliştirme özel depoda yürüyor ve oraya etiket
+    # atılırsa bu iş akışı orada da release üretmeye kalkardı — sonuç, kimsenin
+    # erişemediği bir release ve kaynağı doğrulanamayan bir binary olurdu.
+    # Provenance iddiası public depoda derlenmiş olmaya dayanıyor.
+    if: ${{ !github.event.repository.private }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # ----------------------------------------------------------------
+      #  Etiket ile version.h AYNI OLMALI
+      # ----------------------------------------------------------------
+      #  Bunu kontrol etmezsek v0.3.0 etiketiyle 0.2.0 binary'si
+      #  yayınlanabilir ve sürüm denetimi kullanıcıya sonsuza dek
+      #  "güncelleme var" der. Sessiz ve bulması zor bir hata.
+      - name: Etiket / version.h tutarlılığı
+        shell: pwsh
+        run: |
+          $tag = "${{ github.event.inputs.tag }}"
+          if (-not $tag) { $tag = "${{ github.ref_name }}" }
+          $m = Select-String -Path version.h -Pattern '#define SS_VERSION_STRING\s+"([^"]+)"'
+          $ver = $m.Matches[0].Groups[1].Value
+          Write-Host "etiket=$tag  version.h=$ver"
+          if ($tag -ne "v$ver") {
+            throw "Etiket ($tag) version.h ile ($ver) uyusmuyor. version.h guncellenmemis olabilir."
+          }
+
+      # release.ps1 zaten derliyor, TEST EDİYOR, paketliyor, SHA-256 ve
+      # sürüm notu üretiyor. CI'da ikinci bir uygulama yazmak yerine aynı
+      # betiği çağırıyoruz: yerelde ve CI'da aynı çıktı.
+      - name: Paketle
+        shell: pwsh
+        run: .\tools\release.ps1
+
+      - name: Özetleri günlüğe yaz
+        shell: pwsh
+        run: Get-Content dist\release-notes-*.md
+
+      - name: Yayınla
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.zip
+          body_path: dist/release-notes-${{ github.ref_name }}.md
+          draft: true          # TASLAK: VirusTotal linki elle eklenecek
+          generate_release_notes: false
+
+      # Taslak olarak açılıyor çünkü sürüm notundaki VirusTotal bölümü boş
+      # geliyor. Paketi tarayıp linki yapıştırdıktan SONRA yayınlanmalı;
+      # release.ps1 de "bu adım atlanırsa sürüm YAYINLANMAMALI" diyor.
+      - name: Hatırlatma
+        shell: pwsh
+        run: |
+          Write-Host "::notice::Release TASLAK olarak olusturuldu."
+          Write-Host "::notice::1) dist zip'ini VirusTotal'a yukleyin"
+          Write-Host "::notice::2) Tarama linkini surum notuna ekleyin"
+          Write-Host "::notice::3) lib/syspect-release.ts icindeki SHA-256'lari guncelleyin"
+          Write-Host "::notice::4) Taslagi yayinlayin"

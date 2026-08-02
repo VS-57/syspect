@@ -1,0 +1,715 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EUS Syspect — Oyun takılmalarının sebebini bulur</title>
+<meta name="description" content="Windows'ta oyun takılmalarının ve mavi ekranların sebebini bulup size sebep, güven oranı ve tek cümlelik aksiyon olarak söyler. Ücretsiz, açık kaynak.">
+<style>
+/* ==========================================================================
+   Token sistemi
+   --------------------------------------------------------------------------
+   Renkler uygulamanın kendi paletinden geliyor: sayfa ile program aynı
+   şeye benzemeli. Nötr, mavi-yeşile hafif kaçan bir grafit — düz siyah
+   değil. Vurgu, motorun hüküm rengi.
+
+   Şiddet renkleri (uyarı / kritik) vurgudan AYRI: ürünün tamamı zaten
+   bir şiddet sıralaması, o yüzden bunlar dekor değil bilgi.
+   ========================================================================== */
+:root {
+  --ground:   #121417;
+  --panel:    #191D22;
+  --panel-2:  #1F242A;
+  --line:     #2A313A;
+  --ink:      #E7EBF0;
+  --muted:    #8A94A2;
+  --faint:    #5B6472;
+
+  --accent:   #3DDC97;
+  --accent-d: #2BB77C;
+  --warn:     #F0A741;
+  --crit:     #F26D6D;
+
+  --shadow:   0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.28);
+
+  --f-ui:   "Segoe UI", "Segoe UI Variable", system-ui, -apple-system, sans-serif;
+  --f-mono: ui-monospace, "Cascadia Mono", "Consolas", "SF Mono", monospace;
+
+  --measure: 62ch;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --ground:   #F6F7F9;
+    --panel:    #FFFFFF;
+    --panel-2:  #F1F3F6;
+    --line:     #DDE2E8;
+    --ink:      #171B21;
+    --muted:    #5C6673;
+    --faint:    #8E98A6;
+
+    --accent:   #0E9B66;
+    --accent-d: #0B7E53;
+    --warn:     #B4700A;
+    --crit:     #C8382F;
+
+    --shadow:   0 1px 2px rgba(16,22,30,.06), 0 8px 24px rgba(16,22,30,.07);
+  }
+}
+
+/* Görüntüleyicinin tercihi medya sorgusunu her iki yönde de ezmeli. */
+:root[data-theme="dark"] {
+  --ground:#121417; --panel:#191D22; --panel-2:#1F242A; --line:#2A313A;
+  --ink:#E7EBF0; --muted:#8A94A2; --faint:#5B6472;
+  --accent:#3DDC97; --accent-d:#2BB77C; --warn:#F0A741; --crit:#F26D6D;
+  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.28);
+}
+:root[data-theme="light"] {
+  --ground:#F6F7F9; --panel:#FFFFFF; --panel-2:#F1F3F6; --line:#DDE2E8;
+  --ink:#171B21; --muted:#5C6673; --faint:#8E98A6;
+  --accent:#0E9B66; --accent-d:#0B7E53; --warn:#B4700A; --crit:#C8382F;
+  --shadow: 0 1px 2px rgba(16,22,30,.06), 0 8px 24px rgba(16,22,30,.07);
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--f-ui);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+
+h1, h2, h3 { text-wrap: balance; margin: 0; line-height: 1.15; }
+p { margin: 0; }
+a { color: inherit; }
+
+.eyebrow {
+  font-family: var(--f-mono);
+  font-size: 11.5px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+/* ---------- Üst şerit ---------- */
+.top {
+  border-bottom: 1px solid var(--line);
+  position: sticky; top: 0; z-index: 10;
+  background: color-mix(in srgb, var(--ground) 88%, transparent);
+  backdrop-filter: blur(8px);
+}
+.top .wrap {
+  display: flex; align-items: center; gap: 16px;
+  height: 62px;
+}
+.mark { display: flex; align-items: baseline; gap: 9px; font-weight: 700; letter-spacing: -.01em; }
+.mark .eus { color: var(--muted); font-weight: 600; }
+.mark .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); align-self: center; }
+.top nav { margin-left: auto; display: flex; gap: 22px; align-items: center; }
+.top nav a {
+  text-decoration: none; color: var(--muted); font-size: 14.5px;
+  padding: 4px 0; border-bottom: 1px solid transparent;
+}
+.top nav a:hover { color: var(--ink); border-bottom-color: var(--line); }
+.top nav a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
+@media (max-width: 720px) { .top nav a.hide-s { display: none; } }
+
+/* ---------- Kahraman ---------- */
+.hero { position: relative; overflow: hidden; border-bottom: 1px solid var(--line); }
+.hero canvas {
+  position: absolute; inset: auto 0 0 0; width: 100%; height: 240px;
+  opacity: .30; pointer-events: none;
+}
+.hero .wrap {
+  position: relative;
+  display: grid; grid-template-columns: 1fr minmax(300px, 400px);
+  gap: 56px; align-items: center;
+  padding-top: 84px; padding-bottom: 96px;
+}
+@media (max-width: 900px) {
+  .hero .wrap { grid-template-columns: 1fr; gap: 40px; padding-top: 56px; padding-bottom: 64px; }
+}
+
+.thesis { font-size: clamp(32px, 5.2vw, 52px); font-weight: 700; letter-spacing: -.025em; }
+.thesis em { font-style: normal; color: var(--accent); }
+.sub {
+  margin-top: 20px; max-width: var(--measure);
+  color: var(--muted); font-size: 17.5px;
+}
+.cta-row { margin-top: 32px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 9px;
+  font: inherit; font-weight: 600; font-size: 15px;
+  padding: 12px 20px; border-radius: 9px; border: 1px solid transparent;
+  text-decoration: none; cursor: pointer;
+  transition: transform .12s ease, background .15s ease, border-color .15s ease;
+}
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.btn-primary { background: var(--accent); color: #0B140E; }
+.btn-primary:hover { background: var(--accent-d); transform: translateY(-1px); }
+.btn-ghost { border-color: var(--line); color: var(--ink); background: var(--panel); }
+.btn-ghost:hover { border-color: var(--muted); }
+.cta-note { font-size: 13.5px; color: var(--faint); font-family: var(--f-mono); }
+
+/* ---------- Hüküm kartı: sayfanın tezi ---------- */
+.verdict {
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: 14px; box-shadow: var(--shadow); overflow: hidden;
+}
+.verdict-head {
+  display: flex; align-items: center; gap: 14px;
+  padding: 16px 18px; border-bottom: 1px solid var(--line);
+  background: var(--panel-2);
+}
+.ring { position: relative; flex: none; width: 54px; height: 54px; }
+.ring svg { transform: rotate(-90deg); display: block; }
+.ring-pct {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  font-family: var(--f-mono); font-size: 14px; font-weight: 700;
+  color: var(--accent); font-variant-numeric: tabular-nums;
+}
+.verdict-head h3 { font-size: 16px; font-weight: 700; }
+.verdict-head .cap { font-size: 12.5px; color: var(--faint); margin-top: 3px; }
+
+.verdict-body { padding: 16px 18px; display: grid; gap: 14px; }
+.kv { display: grid; grid-template-columns: 68px 1fr; gap: 12px; align-items: start; }
+.kv dt {
+  font-family: var(--f-mono); font-size: 11px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--faint); padding-top: 3px;
+}
+.kv dd { margin: 0; font-size: 14.5px; color: var(--ink); }
+.kv dd.ev { color: var(--muted); font-family: var(--f-mono); font-size: 13px; line-height: 1.55; }
+
+.verdict-foot {
+  padding: 12px 18px; border-top: 1px solid var(--line);
+  font-size: 12.5px; color: var(--faint);
+  display: flex; gap: 8px; align-items: baseline;
+}
+.verdict-foot b { color: var(--muted); font-weight: 600; }
+
+/* ---------- Bölümler ---------- */
+section { padding: 80px 0; border-bottom: 1px solid var(--line); }
+section > .wrap > header { max-width: var(--measure); margin-bottom: 40px; }
+section h2 { font-size: clamp(24px, 3.2vw, 32px); font-weight: 700; letter-spacing: -.02em; margin-top: 10px; }
+section header p { margin-top: 14px; color: var(--muted); font-size: 16.5px; }
+
+/* Üçlü sözleşme */
+.contract { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line);
+            border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+@media (max-width: 780px) { .contract { grid-template-columns: 1fr; } }
+.contract > div { background: var(--panel); padding: 26px 24px; }
+.contract h3 { font-size: 17px; margin-bottom: 8px; }
+.contract p { color: var(--muted); font-size: 14.5px; }
+.contract .glyph {
+  font-family: var(--f-mono); font-size: 13px; color: var(--accent);
+  margin-bottom: 14px; letter-spacing: .08em;
+}
+
+/* Bulgu listesi — şiddet biçimle de kodlanıyor, sadece renkle değil */
+.findings { display: grid; gap: 10px; }
+.finding {
+  display: grid; grid-template-columns: 4px 108px 1fr; gap: 16px;
+  align-items: start;
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: 10px; overflow: hidden;
+}
+@media (max-width: 700px) {
+  .finding { grid-template-columns: 4px 1fr; }
+  .finding .sev-label { grid-column: 2; }
+}
+.finding .stripe { align-self: stretch; }
+.finding.bad  .stripe { background: var(--crit); }
+.finding.warn .stripe { background: var(--warn); }
+.finding.good .stripe { background: var(--accent); }
+.finding.unk  .stripe { background: var(--faint); }
+.sev-label {
+  font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .12em;
+  text-transform: uppercase; padding-top: 16px;
+}
+.finding.bad  .sev-label { color: var(--crit); }
+.finding.warn .sev-label { color: var(--warn); }
+.finding.good .sev-label { color: var(--accent); }
+.finding.unk  .sev-label { color: var(--faint); }
+.finding .txt { padding: 14px 18px 15px 0; }
+.finding .txt strong { display: block; font-size: 15px; font-weight: 600; }
+.finding .txt span { display: block; margin-top: 4px; color: var(--muted); font-size: 14px; }
+
+/* Sessizlik bölümü — sayfanın en sakin yeri, bilerek */
+.quiet { background: var(--panel-2); }
+.quiet blockquote {
+  margin: 0; max-width: var(--measure);
+  font-size: clamp(19px, 2.6vw, 25px); font-weight: 600;
+  letter-spacing: -.015em; line-height: 1.4;
+}
+.quiet .rules { margin-top: 36px; display: grid; gap: 20px; max-width: var(--measure); }
+.quiet .rules div { display: grid; grid-template-columns: 26px 1fr; gap: 14px; }
+.quiet .rules b {
+  font-family: var(--f-mono); font-size: 12px; color: var(--accent);
+  font-weight: 600; padding-top: 3px;
+}
+.quiet .rules p { color: var(--muted); font-size: 15px; }
+
+/* İndirme + güven bloğu */
+.dl { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
+@media (max-width: 860px) { .dl { grid-template-columns: 1fr; } }
+.card {
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: 12px; padding: 24px;
+}
+.card h3 { font-size: 16px; margin-bottom: 14px; }
+.filerow {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+  font-family: var(--f-mono); font-size: 13px; color: var(--muted);
+  padding-bottom: 14px; margin-bottom: 16px; border-bottom: 1px solid var(--line);
+  font-variant-numeric: tabular-nums;
+}
+.filerow b { color: var(--ink); font-weight: 600; }
+
+.hashes { display: grid; gap: 10px; }
+.hash { display: grid; gap: 4px; }
+.hash .n { font-family: var(--f-mono); font-size: 12px; color: var(--faint); }
+.hash code {
+  font-family: var(--f-mono); font-size: 11.5px; line-height: 1.5;
+  color: var(--muted); word-break: break-all;
+  background: var(--panel-2); border: 1px solid var(--line);
+  border-radius: 6px; padding: 7px 9px; display: block;
+}
+.verify { margin-top: 16px; }
+.verify pre {
+  margin: 8px 0 0; overflow-x: auto;
+  background: var(--panel-2); border: 1px solid var(--line);
+  border-radius: 6px; padding: 10px 12px;
+}
+.verify code { font-family: var(--f-mono); font-size: 12px; color: var(--ink); }
+
+.warnbox { border-left: 3px solid var(--warn); padding-left: 16px; }
+.warnbox h3 { color: var(--warn); }
+.warnbox ol { margin: 12px 0 0; padding-left: 20px; color: var(--muted); font-size: 14.5px; }
+.warnbox li { margin-bottom: 6px; }
+.warnbox li b { color: var(--ink); }
+
+/* Yapmadıkları */
+.nots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+@media (max-width: 820px) { .nots { grid-template-columns: 1fr; } }
+.not { border-top: 2px solid var(--line); padding-top: 18px; }
+.not h3 { font-size: 15.5px; margin-bottom: 8px; }
+.not p { color: var(--muted); font-size: 14.5px; }
+
+footer { padding: 40px 0 56px; }
+footer .wrap { display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; align-items: center; }
+footer p { color: var(--faint); font-size: 14px; }
+footer a { color: var(--muted); }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="mark">
+      <span class="dot" aria-hidden="true"></span>
+      <span class="eus">EUS</span><span>Syspect</span>
+    </div>
+    <nav>
+      <a href="#nasil" class="hide-s">Ne yapar</a>
+      <a href="#bakar" class="hide-s">Neye bakar</a>
+      <a href="#susar" class="hide-s">Sınırları</a>
+      <a href="#indir">İndir</a>
+    </nav>
+  </div>
+</header>
+
+<!-- ======================================================================
+     Kahraman: sayfanın tezi bir HÜKÜM kartıdır.
+     Ekran görüntüsü değil, programın gerçekten ürettiği çıktının kendisi.
+     ====================================================================== -->
+<div class="hero">
+  <canvas id="trace" aria-hidden="true"></canvas>
+  <div class="wrap">
+    <div>
+      <p class="eyebrow">Bir EnUcuzSistem aracı</p>
+      <h1 class="thesis">Oyunda takılıyorsun.<br>Syspect <em>sebebini söyler.</em></h1>
+      <p class="sub">
+        Grafik gösterip yorumu sana bırakmaz. Sistemini bir süre dinler, sonra
+        sebebi, kaç ihtimalle olduğunu ve ne yapman gerektiğini tek cümleyle
+        yazar. Emin değilse söylemez.
+      </p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="#indir">Ücretsiz indir</a>
+        <a class="btn btn-ghost" href="https://github.com/VS-57/syspect">Kaynak kodu</a>
+        <span class="cta-note">v0.2.0 · Windows 10/11 · 2,1 MB</span>
+      </div>
+    </div>
+
+    <div class="verdict">
+      <div class="verdict-head">
+        <div class="ring">
+          <svg width="54" height="54" viewBox="0 0 54 54" aria-hidden="true">
+            <circle cx="27" cy="27" r="23" fill="none" stroke="var(--line)" stroke-width="5"/>
+            <circle id="arc" cx="27" cy="27" r="23" fill="none" stroke="var(--accent)"
+                    stroke-width="5" stroke-linecap="round"
+                    stroke-dasharray="0 144.5"/>
+          </svg>
+          <div class="ring-pct" id="pct">%0</div>
+        </div>
+        <div>
+          <h3>Bellek / EXPO-XMP kararsızlığı</h3>
+          <p class="cap">Ana şüphe · 4 dk 12 sn ölçüm · 31 240 kare</p>
+        </div>
+      </div>
+      <dl class="verdict-body">
+        <div class="kv">
+          <dt>Kanıt</dt>
+          <dd class="ev">takılı bellek modülleri birbirinin aynısı değil — modül başına test bu durumu elemez; sistem 4 kez dump üretmeden kapandı</dd>
+        </div>
+        <div class="kv">
+          <dt>Yapılacak</dt>
+          <dd>BIOS'ta EXPO/XMP'yi kapatıp bir gün kullanın. Düzelirse hızı bir kademe düşürüp tekrar açın.</dd>
+        </div>
+      </dl>
+      <div class="verdict-foot">
+        <b>%18</b><span>Depolama</span>
+        <b style="margin-left:10px">%20</b><span>Ölçülmemiş diğer sebepler</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ====================== Üçlü sözleşme ====================== -->
+<section id="nasil">
+  <div class="wrap">
+    <header>
+      <p class="eyebrow">Çıktı</p>
+      <h2>Her sonuç üç parçadan oluşur</h2>
+      <p>
+        PresentMon, LatencyMon, HWiNFO zaten mükemmel veri topluyor. Hepsi sana
+        bir grafik verip yorumu sana bırakıyor. Syspect'in yaptığı iş veri
+        toplamak değil, hüküm vermek.
+      </p>
+    </header>
+    <div class="contract">
+      <div>
+        <p class="glyph">SEBEP</p>
+        <h3>Ne olduğu</h3>
+        <p>Bellek kararsızlığı mı, sürücü mü, güç kaynağı mı, yoksa hiçbiri mi. On sekiz ayrı sebep sıralanır.</p>
+      </div>
+      <div>
+        <p class="glyph">GÜVEN</p>
+        <h3>Ne kadar emin olduğu</h3>
+        <p>Hiçbir sebep %80'i geçemez. Kalan pay açıkça "ölçemediğimiz alan" diye yazılır.</p>
+      </div>
+      <div>
+        <p class="glyph">AKSİYON</p>
+        <h3>Ne yapman gerektiği</h3>
+        <p>Tek cümle. "Şunu deneyebilirsin, ya da şunu" değil — sıradaki tek adım.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ====================== Neye bakar ====================== -->
+<section id="bakar">
+  <div class="wrap">
+    <header>
+      <p class="eyebrow">Bulgular</p>
+      <h2>Ölçüm almadan da bir şeyler söyler</h2>
+      <p>
+        Programı açtığın anda sistemin okunur. Aşağıdakiler gerçek bulgu
+        satırlarıdır — ekran görüntüsü değil, programın yazdığı metnin kendisi.
+      </p>
+    </header>
+    <div class="findings">
+      <div class="finding bad">
+        <div class="stripe"></div>
+        <div class="sev-label">Sorun</div>
+        <div class="txt">
+          <strong>Bellek modülleri birbirinin aynısı değil</strong>
+          <span>Bellek denetleyicisi en yavaş modüle iner ve iki takımın zamanlamaları uyuşmadığı için kararsızlık olasılığı belirgin artar. Modülleri tek tek test etmek bu durumu elemez.</span>
+        </div>
+      </div>
+      <div class="finding bad">
+        <div class="stripe"></div>
+        <div class="sev-label">Sorun</div>
+        <div class="txt">
+          <strong>Windows dönen disk (HDD) üzerinde</strong>
+          <span>Bir SSD takıp Windows'u ve oyunları oraya taşıyın — bu sistemdeki en büyük tek iyileştirmedir.</span>
+        </div>
+      </div>
+      <div class="finding warn">
+        <div class="stripe"></div>
+        <div class="sev-label">Uyarı</div>
+        <div class="txt">
+          <strong>Ekran kartı 65 W ile sınırlı (fabrika ayarı 140 W)</strong>
+          <span>Dizüstülerde üretici kartın güç bütçesini düşürebilir. Aynı model kart başka bir dizüstüde çok daha hızlı olabilir; fark buradan gelir.</span>
+        </div>
+      </div>
+      <div class="finding warn">
+        <div class="stripe"></div>
+        <div class="sev-label">Uyarı</div>
+        <div class="txt">
+          <strong>Bellek Bütünlüğü açık</strong>
+          <span>Windows 11'de çoğu makinede varsayılan açık gelir ve oyunlarda tipik %5-15 kayıp üretir.</span>
+        </div>
+      </div>
+      <div class="finding good">
+        <div class="stripe"></div>
+        <div class="sev-label">Sorun yok</div>
+        <div class="txt">
+          <strong>Resizable BAR açık</strong>
+          <span>Bakıldı, sorun bulunamadı.</span>
+        </div>
+      </div>
+      <div class="finding unk">
+        <div class="stripe"></div>
+        <div class="sev-label">Ölçülemedi</div>
+        <div class="txt">
+          <strong>İşlemci çekirdek sıcaklığı okunamıyor</strong>
+          <span>Windows bu değeri normal programlara vermiyor. Uydurma değer göstermiyoruz.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ====================== Sessizlik ====================== -->
+<section id="susar" class="quiet">
+  <div class="wrap">
+    <p class="eyebrow">Sınırlar</p>
+    <blockquote>
+      Yanlış teşhis, teşhissizlikten pahalıdır. Çalışan bir sürücüyü söktürür
+      ya da gereksiz parça aldırır. Bu yüzden Syspect emin olmadığında susar.
+    </blockquote>
+    <div class="rules">
+      <div>
+        <b>01</b>
+        <p><strong>Kayıt kısaysa hüküm yok.</strong> 30 saniyenin altındaki ölçümde sayılar gösterilir ama sebep sıralaması yapılmaz. Kısa kayıtta liste üretip altına "ama güvenim düşük" yazmak dürüst değil — herkes listeyi okur, uyarıyı okumaz.</p>
+      </div>
+      <div>
+        <b>02</b>
+        <p><strong>Hiçbir sebep %80'i geçemez.</strong> "Kesin sebep bu" cümlesi hiçbir koşulda kurulmaz. Kalan pay ölçülemeyen alan olarak listelenir.</p>
+      </div>
+      <div>
+        <b>03</b>
+        <p><strong>Geçmişteki olay ile şu anki olay ayrılır.</strong> İki ay önce bir kez ekran sürücüsü sıfırlanmış sağlıklı bir makine, bugünkü takılması için suçlanmaz.</p>
+      </div>
+      <div>
+        <b>04</b>
+        <p><strong>Okunamayan şey "sorun yok" sayılmaz.</strong> Ölçülemeyen her alan ayrıca listelenir. Sessizce atlanmaz.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ====================== İndir ====================== -->
+<section id="indir">
+  <div class="wrap">
+    <header>
+      <p class="eyebrow">İndir</p>
+      <h2>Ücretsiz, kurulum yok, açık kaynak</h2>
+      <p>
+        Zip'i açıp <code>ss_ui.exe</code> dosyasını çalıştırman yeterli. Kurulum
+        yapmaz, kayıt defterine dil tercihin dışında bir şey yazmaz.
+      </p>
+    </header>
+
+    <div class="cta-row" style="margin-bottom:32px">
+      <a class="btn btn-primary" href="https://github.com/VS-57/syspect/releases/latest">syspect-0.2.0.zip indir</a>
+      <a class="btn btn-ghost" href="https://www.virustotal.com/">VirusTotal taraması</a>
+    </div>
+
+    <div class="dl">
+      <div class="card">
+        <h3>Dosya özetleri</h3>
+        <div class="filerow"><b>syspect-0.2.0.zip</b><span>2,1 MB</span></div>
+        <div class="hashes">
+          <div class="hash">
+            <span class="n">syspect-0.2.0.zip — SHA-256</span>
+            <code>E8B74B22AEB5A29AE235B88F63B7570A3BD4FE3A5DAE56F0726A52EA8BC16225</code>
+          </div>
+          <div class="hash">
+            <span class="n">ss_ui.exe — SHA-256</span>
+            <code>E9F78D4EAD96B49E02E3CEA0FB14478D002E9E954F291E4A94D78992DFE67425</code>
+          </div>
+          <div class="hash">
+            <span class="n">ss_cli.exe — SHA-256</span>
+            <code>0DC89613CC4AB54B743D41F9FC060E6A7C6247794612CB1237C9FE113C439974</code>
+          </div>
+        </div>
+        <div class="verify">
+          <span class="n" style="font-family:var(--f-mono);font-size:12px;color:var(--faint)">İndirdiğin dosyayı doğrula:</span>
+          <pre><code>Get-FileHash syspect-0.2.0.zip -Algorithm SHA256</code></pre>
+        </div>
+      </div>
+
+      <div class="card warnbox">
+        <h3>Windows bir uyarı gösterecek</h3>
+        <p style="color:var(--muted);font-size:14.5px">
+          Program şu an imzasız dağıtılıyor. Kod imzalama sertifikası ücretli ve
+          bunu saklamak yerine söylemeyi tercih ediyoruz.
+        </p>
+        <ol>
+          <li>Mavi bir pencere çıkar: <b>"Windows bilgisayarınızı korudu"</b></li>
+          <li><b>Daha fazla bilgi</b> yazısına tıkla</li>
+          <li>Alttaki <b>Yine de çalıştır</b> düğmesine bas</li>
+        </ol>
+        <p style="color:var(--muted);font-size:14.5px;margin-top:16px">
+          Güvenmiyorsan yukarıdaki özetleri karşılaştır, VirusTotal taramasına bak,
+          ya da kaynak koddan kendin derle. Üçü de bir dakikalık iş.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ====================== Yapmadıkları ====================== -->
+<section>
+  <div class="wrap">
+    <header>
+      <p class="eyebrow">Yapmadıkları</p>
+      <h2>Neye dokunmadığını bilmen gerekiyor</h2>
+    </header>
+    <div class="nots">
+      <div class="not">
+        <h3>Oyununa dokunmaz</h3>
+        <p>Hook yok, DLL enjeksiyonu yok, oyun belleğine okuma yok. Sadece Windows'un kendi yayınladığı ölçüm olayları pasif dinlenir. Anti-cheat sınırı bilerek hiç zorlanmaz.</p>
+      </div>
+      <div class="not">
+        <h3>Hiçbir ayarını değiştirmez</h3>
+        <p>Ne yapman gerektiğini söyler, senin yerine yapmaz. BIOS'a, sürücüye, kayıt defterine müdahale etmez.</p>
+      </div>
+      <div class="not">
+        <h3>Veri toplamaz</h3>
+        <p>Telemetri yok, hesap yok, kimlik yok. Disk seri numarasını bile bilerek okumuyoruz. Tek ağ isteği yeni sürüm denetimi, onu da kapatabilirsin.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p>Syspect · bir <a href="https://enucuzsistem.com">EnUcuzSistem</a> aracı</p>
+    <p><a href="https://github.com/VS-57/syspect">GitHub</a> · v0.2.0</p>
+  </div>
+</footer>
+
+<script>
+/* --------------------------------------------------------------------------
+   Kahraman arka planı: kare süresi izi.
+   Ürünün kendi enstrümanı — dekoratif bir dalga değil, gerçekten ölçtüğü şey.
+   Düzgün bir taban, arada tökezleme sivrileri, bir de donma.
+   -------------------------------------------------------------------------- */
+(function () {
+  var c = document.getElementById('trace');
+  if (!c) return;
+  var ctx = c.getContext('2d');
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Sabit bir desen: her yüklemede aynı görünsün, rastgelelik gürültü yapmasın.
+  var spikes = { 34: 3.1, 35: 1.6, 88: 5.2, 131: 2.4, 132: 1.9, 186: 7.8, 187: 2.2, 240: 2.9 };
+
+  function draw(progress) {
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var w = c.clientWidth, h = c.clientHeight;
+    c.width = w * dpr; c.height = h * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+
+    var n = 300, base = h * 0.72, unit = h * 0.075;
+    var css = getComputedStyle(document.documentElement);
+    var accent = css.getPropertyValue('--accent').trim() || '#3DDC97';
+    var count = Math.floor(n * progress);
+
+    // Alan dolgusu
+    var g = ctx.createLinearGradient(0, 0, 0, h);
+    g.addColorStop(0, accent + '40');
+    g.addColorStop(1, accent + '00');
+
+    ctx.beginPath();
+    ctx.moveTo(0, base);
+    for (var i = 0; i < count; i++) {
+      var x = (i / (n - 1)) * w;
+      var wobble = Math.sin(i * 0.42) * 0.16 + Math.sin(i * 0.17) * 0.1;
+      var mult = spikes[i] || (1 + wobble);
+      ctx.lineTo(x, base - (mult - 1) * unit * 2.6 - unit * 0.25);
+    }
+    ctx.lineTo((count / (n - 1)) * w, base);
+    ctx.closePath();
+    ctx.fillStyle = g;
+    ctx.fill();
+
+    // Çizgi
+    ctx.beginPath();
+    for (var j = 0; j < count; j++) {
+      var x2 = (j / (n - 1)) * w;
+      var wob = Math.sin(j * 0.42) * 0.16 + Math.sin(j * 0.17) * 0.1;
+      var m2 = spikes[j] || (1 + wob);
+      var y2 = base - (m2 - 1) * unit * 2.6 - unit * 0.25;
+      j === 0 ? ctx.moveTo(x2, y2) : ctx.lineTo(x2, y2);
+    }
+    ctx.strokeStyle = accent;
+    ctx.lineWidth = 1.4;
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+  }
+
+  // Once BITMIS hali cizilir, animasyon onun ustune gelir.
+  //
+  // Sebep: requestAnimationFrame arka plandaki bir sekmede hic tetiklenmiyor.
+  // Dogrudan animasyonla baslasaydik, sayfayi yeni sekmede acan kullanici
+  // sekmeye gecene kadar BOS bir tuval gorurdu. Onemli olan son durumun her
+  // kosulda dogru olmasi; animasyon yalnizca sus.
+  draw(1);
+
+  if (!reduce && document.visibilityState === 'visible') {
+    var t0 = null;
+    requestAnimationFrame(function step(ts) {
+      if (t0 === null) t0 = ts;
+      var p = Math.min((ts - t0) / 1400, 1);
+      draw(p);
+      if (p < 1) requestAnimationFrame(step);
+    });
+  }
+  window.addEventListener('resize', function () { draw(1); });
+})();
+
+/* Güven halkası: hüküm kartındaki oran, açılışta dolar. */
+(function () {
+  var arc = document.getElementById('arc'), lbl = document.getElementById('pct');
+  if (!arc || !lbl) return;
+  var C = 2 * Math.PI * 23, target = 62;
+
+  // Kare izinde olduğu gibi: once son deger yazilir, animasyon ustune gelir.
+  // Arka plandaki sekmede rAF hic calismiyor ve oran %0'da kalirdi.
+  arc.setAttribute('stroke-dasharray', (C * target / 100) + ' ' + C);
+  lbl.textContent = '%' + target;
+
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if (document.visibilityState !== 'visible') return;
+
+  var t0 = null;
+  requestAnimationFrame(function step(ts) {
+    if (t0 === null) t0 = ts;
+    var p = Math.min((ts - t0) / 1100, 1);
+    var e = 1 - Math.pow(1 - p, 3);
+    var v = target * e;
+    arc.setAttribute('stroke-dasharray', (C * v / 100) + ' ' + C);
+    lbl.textContent = '%' + Math.round(v);
+    if (p < 1) requestAnimationFrame(step);
+  });
+})();
+</script>
+
+</body>
+</html>

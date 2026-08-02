@@ -1,0 +1,52 @@
+# ============================================================================
+#  CI — her push'ta derle ve test et
+# ----------------------------------------------------------------------------
+#  CLAUDE.md: "Değişiklik yaptıktan sonra HER ZAMAN ctest çalıştır. Testler
+#  hızlı (< 0.1 sn), mazeret yok." Bu iş akışı o kuralı unutulamaz kılıyor.
+#
+#  TEK PLATFORM. Uygulama Windows'a özgü: ETW, Win32, GDI+, SetupAPI. Çok
+#  platformlu bir matris ilk adımda patlar. ss_core taşınabilir ama tek
+#  başına derlemek CI karmaşıklığını haklı çıkarmıyor.
+#
+#  Jeneratör BİLEREK sabitlenmiyor. Geliştirme makinesi "Visual Studio 18
+#  2026" kullanıyor ama koşucuda o sürüm yok; varsayılana bırakmak ikisinde
+#  de çalışıyor.
+# ============================================================================
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-test:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Yapılandır
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Derle
+        run: cmake --build build --config Release
+
+      # ctest'in özet çıktısı hangi testin düştüğünü göstermiyor;
+      # --output-on-failure olmadan hata ayıklamak için koşuyu tekrarlamak
+      # gerekiyordu.
+      - name: Test
+        run: ctest --test-dir build -C Release --output-on-failure
+
+      # Vaka külliyatının kaç testi geçtiği günlükte görünsün: bir kural
+      # değişikliğinin sayıyı düşürmesi gözden kaçmasın.
+      - name: Vaka külliyatı özeti
+        run: |
+          .\build\Release\test_core.exe | Select-String "SONUC"
+          .\build\Release\test_winlayer.exe | Select-String "SONUC"
+        shell: pwsh
+
+      # NOT: yönetici gerektiren testler (çekirdek modül tablosu, DPC
+      # toplayıcı) koşucuda ATLANIYOR. Başarısız değil atlanmış sayılacak
+      # şekilde yazıldılar; yoksa CI kalıcı kırmızı kalırdı.
